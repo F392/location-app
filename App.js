@@ -1,132 +1,92 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { createStackNavigator } from "@react-navigation/stack";
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoginScreen from './screens/LoginScreen';
+import Main from './Main';
+import RegisterNavigator from './navigation/auth/RegisterNavigator'
+import VerificationNavigator from './navigation/auth/VerificationNavigator'
+import ForgotPasswordNavigator from './navigation/auth/ForgotPasswordNavigator'
+import ForgotPasswordVerificationNavigator from './navigation/auth/ForgotPasswordVerificationNavigator'
+import ResetPasswordNavigator from './navigation/auth/ResetPasswordNavigator'
 
-import HomeScreen from "./screens/HomeScreen";
-import CommunityScreen from "./screens/CommunityScreen";
-import PostScreen from "./screens/PostScreen";
-import PopularScreen from "./screens/PopularScreen";
-import ProfileScreen from "./screens/ProfileScreen";
-import SettingsNavigator from "./navigation/profile/SettingsNavigator";
-import EditProfileNavigator from "./navigation/profile/EditProfileNavigator";
-
-const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 export default function App() {
-  const user = {
-    username: "mikuni",
-    location: "東京, 日本",
-    bio: "趣味: 写真撮影, 旅行",
-    likes: 200,
-    comments: 150,
-    recentPosts: [{ id: "1", image: "https://example.com/image1.jpg" }],
-  };
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
 
-  // プロフィールのメニュー
-  const [menuVisible, setMenuVisible] = useState(false);
-  const toggleMenu = () => {
-    setMenuVisible(!menuVisible);
-  };
+ useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        setIsLoggedIn(!!token); // tokenがあればtrue、なければfalse
+      } catch (error) {
+        console.error("Error checking login status", error);
+        setIsLoggedIn(false); // エラー時は未ログイン扱い
+      }
+    };
+    checkLoginStatus();
+  }, []);
+
+  if (isLoggedIn === null) {
+    return null; // ローディング中の場合
+  }
+  
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Main" options={{ headerShown: false }}>
-          {() => (
-            <Tab.Navigator
-              screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused, color, size }) => {
-                  let iconName;
-
-                  switch (route.name) {
-                    case "ホーム":
-                      iconName = focused ? "home" : "home-outline";
-                      break;
-                    case "人気":
-                      iconName = focused ? "people" : "people-outline";
-                      break;
-                    case "投稿":
-                      iconName = focused ? "create" : "create-outline";
-                      break;
-                    case "コミュニティ":
-                      iconName = focused
-                        ? "chatbubbles"
-                        : "chatbubbles-outline";
-                      break;
-                    case "プロフィール":
-                      iconName = focused ? "person" : "person-outline";
-                      break;
-                  }
-
-                  return <Ionicons name={iconName} size={size} color={color} />;
-                },
-                tabBarActiveTintColor: "tomato",
-                tabBarInactiveTintColor: "gray",
-              })}
-            >
-              <Tab.Screen
-                name="ホーム"
-                component={HomeScreen}
-                options={{ headerShown: false }}
-              />
-              <Tab.Screen name="人気" component={PopularScreen} />
-              <Tab.Screen name="投稿" component={PostScreen} />
-              <Tab.Screen name="コミュニティ" component={CommunityScreen} />
-              <Tab.Screen
-                name="プロフィール"
-                initialParams={{ user: user }}
-                options={{
-                  headerTitle: user.username,
-                  headerRight: () => (
-                    <TouchableOpacity
-                      style={styles.profileMenu}
-                      onPress={toggleMenu}
-                    >
-                      <Ionicons name="menu" size={30} color="black" />
-                    </TouchableOpacity>
-                  ),
-                }}
-              >
-                {() => (
-                  <ProfileScreen
-                    user={user}
-                    menuVisible={menuVisible}
-                    setMenuVisible={setMenuVisible}
-                  />
-                )}
-              </Tab.Screen>
-            </Tab.Navigator>
-          )}
-        </Stack.Screen>
+      <Stack.Navigator initialRouteName={isLoggedIn ? 'Main' : 'LoginScreen'}>
         <Stack.Screen
-          name="Settings"
-          component={SettingsNavigator}
-          options={{
-            headerShown: true, // 設定画面のヘッダーを表示
-            headerBackTitle: "プロフィール", // 戻るボタンのタイトルを「プロフィール」に変更
-            title: '設定',
-          }}
+          name="Main"
+          component={Main}
+          options={{ headerShown: false }} // Main画面はタブナビゲーション内なのでヘッダーは非表示にする
         />
         <Stack.Screen
-          name="EditProfile"
-          component={EditProfileNavigator}
-          options={{
-            headerShown: true, // 設定画面のヘッダーを表示
-            headerBackTitle: "プロフィール", // 戻るボタンのタイトルを「プロフィール」に変更
-            title: 'プロフィール編集',
-          }}
+          name="LoginScreen"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+        name="RegisterNavigator"
+        component={RegisterNavigator}
+        options={{ 
+          headerTitle: 'アカウント登録',
+          headerLeft: () => null,
+         }}
+        />
+        <Stack.Screen
+        name="VerificationNavigator"
+        component={VerificationNavigator}
+        options={{ 
+          headerShown: false,
+          headerLeft: () => null,
+         }}
+        />
+        <Stack.Screen
+        name="ForgotPasswordNavigator"
+        component={ForgotPasswordNavigator}
+        options={{ 
+          headerShown: false,
+          headerLeft: () => null,
+         }}
+        />
+        <Stack.Screen
+        name="ForgotPasswordVerificationNavigator"
+        component={ForgotPasswordVerificationNavigator}
+        options={{ 
+          headerShown: false,
+          headerLeft: () => null,
+         }}
+        />
+        <Stack.Screen
+        name="ResetPasswordNavigator"
+        component={ResetPasswordNavigator}
+        options={{ 
+          headerShown: false,
+          headerLeft: () => null,
+         }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  profileMenu: {
-    marginRight: 15,
-  },
-});
